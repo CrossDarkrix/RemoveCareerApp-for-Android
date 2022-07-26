@@ -72,7 +72,7 @@ MacやLinuxやWindowsでの例 :) `python3 RemoveCareerApp.py`
 
 今後はフォークした本プロジェクトを休止にしようと考えています。
 
-今後は~[本家様](https://github.com/Aoi-Developer/remove-career-app)のプロジェクト~(本家様が削除されました)やGUI版と復元機能のついた物を開発していらっしゃる方のプロジェクトをご利用ください。
+今後は~~[本家様](https://github.com/Aoi-Developer/remove-career-app)のプロジェクト~~(本家様が削除されました)やGUI版と復元機能のついた物を開発していらっしゃる方のプロジェクトをご利用ください。
 
 
 Copyright (C) 2022 aoi_satou(竹林人間)
