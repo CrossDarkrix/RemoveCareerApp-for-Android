@@ -29,33 +29,33 @@ def forMacInit():
     plat_toolsZip = urllib.request.urlopen('https://dl.google.com/android/repository/platform-tools_r33.0.1-darwin.zip').read() # ADBの入った「Platform-Tools」のダウンロード
     print('[INFO] 「Platform Tools」をダウンロードしました。')
     with zipfile.ZipFile(io.BytesIO(plat_toolsZip)) as plat_zip: # 「platform-tools」をダイレクトに~/Applicationsへ解凍
-        plat_zip.extractall(path='{}/Applications/'.format(os.environ['HOME']))
+        plat_zip.extractall(path='{}/Applications/'.format(os.path.expanduser("~")))
     try:
-        subprocess.check_call('export PATH="$PATH:{}/Applications/platform-tools"'.format(os.environ['HOME']), shell=True) # ~/Applications/platform-toolのパスを通す
+        subprocess.check_call('export PATH="$PATH:{}/Applications/platform-tools"'.format(os.path.expanduser("~")), shell=True) # ~/Applications/platform-toolのパスを通す
     except:
         pass
     try:
-        rZshrc = open('{}/.zshrc'.format(os.environ['HOME']), 'r').read() # zshrcがあるかの確認
+        rZshrc = open('{}/.zshrc'.format(os.path.expanduser("~")), 'r').read() # zshrcがあるかの確認
     except:
         rZshrc = ''
     try:
-        rBashrc = open('{}/.bashrc'.format(os.environ['HOME']), 'r').read() # bashrcがあるかの確認
+        rBashrc = open('{}/.bashrc'.format(os.path.expanduser("~")), 'r').read() # bashrcがあるかの確認
     except:
         rBashrc = ''
     if not rZshrc == '': # zshrcがあれば以下を実行する
         with open('{}/.zshrc'.format(os.environ['HOME']), 'a') as wZshrc:
-            wZshrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.environ['HOME'])))
+            wZshrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.path.expanduser("~"))))
     else: # zshrcがなければ以下を実行する
         with open('{}/.zshrc'.format(os.environ['HOME']), 'w') as wZshrc:
-            wZshrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.environ['HOME'])))
+            wZshrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.path.expanduser("~"))))
     if not rBashrc == '': # bashrcがあれば以下を実行する
         with open('{}/.bashrc'.format(os.environ['HOME']), 'a') as wBashrc:
-            wBashrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.environ['HOME'])))
+            wBashrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.path.expanduser("~"))))
     else: # bashrcがなければ以下を実行する
         with open('{}/.bashrc'.format(os.environ['HOME']), 'w') as wBashrc:
-            wBashrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.environ['HOME'])))
+            wBashrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.path.expanduser("~"))))
     try:
-        subprocess.check_call('source {}/.zshrc'.format(os.environ['HOME']), shell=True)
+        subprocess.check_call('source {}/.zshrc'.format(os.path.expanduser("~")), shell=True)
     except:
         pass
 
@@ -158,22 +158,38 @@ def forWindowsInit():
         print('[ERROR] 「{}」を環境変数に追加できませんでした。手動で環境変数に追加する必要があります'.format(os.path.join(WorkDrive, 'platform-tools')))
     currentdir = os.getcwd() # 今いるフォルダーのパスを取得
     os.chdir('{}{}tmpdir{}usb_driver'.format(os.getcwd(), os.sep, os.sep)) # 一時作業フォルダに入る
+    DriverFilePath = '{}{}'.format(os.getcwd(), os.sep)
     try:
-        subprocess.check_call('rundll32 syssetup,SetupInfObjectInstallAction DefaultInstall 128 android_winusb.inf', shell=True)
+        print('[INFO] 次のコマンドを実行中.....: {}'.format('rundll32 syssetup,SetupInfObjectInstallAction DefaultInstall 128 {}android_winusb.inf'.format(DriverFilePath)))
+        subprocess.check_call('rundll32 syssetup,SetupInfObjectInstallAction DefaultInstall 128 {}android_winusb.inf'.format(DriverFilePath), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         print('[INFO] ドライバーのインストールに成功しました。')
     except:
         print('[ERROR] ドライバーのインストールに失敗しました。別のコマンドで再試行します。')
         try:
-            subprocess.check_call('InstallHinfSection(NULL,NULL,TEXT("DefaultInstall 132 android_winusb.inf"),0);', shell=True)
+            print('[INFO] 次のコマンドを実行中.....: {}'.format('rundll32.exe setupapi.dll,InstallHinfSection DiskInstall 128 {}android_winusb.inf'.format(DriverFilePath)))
+            subprocess.check_call('rundll32.exe setupapi.dll,InstallHinfSection DiskInstall 128 {}android_winusb.inf'.format(DriverFilePath), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             print('[INFO] ドライバーのインストールに成功しました。')
         except:
             print('[ERROR] ドライバーのインストールに失敗しました。別のコマンドで再試行します。')
             try:
-                subprocess.check_call('pnputil -i -a android_winusb.inf', shell=True)
+                print('[INFO] 次のコマンドを実行中.....: {}'.format('rundll32.exe advpack.dll,LaunchINFSection {}android_winusb.inf,DefaultInstall_SingleUser,1,N'.format(DriverFilePath)))
+                subprocess.check_call('rundll32.exe advpack.dll,LaunchINFSection {}android_winusb.inf,DefaultInstall_SingleUser,1,N'.format(DriverFilePath), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 print('[INFO] ドライバーのインストールに成功しました。')
             except:
-                print('[ERROR] ドライバーのインストールに失敗しました。手動でドライバーをインストールする必要があります。場所: {}'.format(os.getcwd()))
-                sys.exit(1)
+                print('[ERROR] ドライバーのインストールに失敗しました。別のコマンドで再試行します。')
+                try:
+                    print('[INFO] 次のコマンドを実行中.....: {}'.format('drvinst.exe /i {}android_winusb.inf'.format(DriverFilePath)))
+                    subprocess.check_call('drvinst.exe /i {}android_winusb.inf'.format(DriverFilePath), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    print('[INFO] ドライバーのインストールに成功しました。')
+                except:
+                    print('[ERROR] ドライバーのインストールに失敗しました。別のコマンドで再試行します。')
+                    try:
+                        print('[INFO] 次のコマンドを実行中.....: {}'.format('pnputil /add-driver {}android_winusb.inf /install /subdirs'.format(DriverFilePath)))
+                        subprocess.check_call('pnputil /add-driver {}android_winusb.inf /install /subdirs'.format(DriverFilePath), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        print('[INFO] ドライバーのインストールに成功しました。')
+                    except:
+                        print('[ERROR] ドライバーのインストールに失敗しました。全ての手順で失敗したため、手動でドライバーをインストールする必要があります。ドライバーの場所: {}'.format(os.getcwd()))
+                        sys.exit(1)
     os.chdir(currentdir) # 元のフォルダに戻る
 
 def CareerAppList(PackList):
@@ -284,10 +300,11 @@ def main():
         if platform.system() == 'Windows':
             print('[INFO] オペレーションシステムが「Windows」でしたので処理を続行します.....')
             try:
-                ReadSetting = open('setting.conf', 'r').read() # 設定ファイルの読み込み
+                ReadSetting = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read() # 設定ファイルの読み込み
                 setting = ''
             except:
-                setting = open('setting.conf', 'w') # 設定ファイルがなかった場合
+                os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                setting = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'w', encoding='utf-8') # 設定ファイルがなかった場合
                 ReadSetting = ''
             if not ReadSetting == 'setting=1': # 設定ファイルに「setting=1」が書き込まれていなかった場合以下を実行する
                 if AutoInstaller(): # 自動インストール機能をオンにするかの確認
@@ -347,7 +364,9 @@ def main():
                     PackageNameList = '\n'.join(ReCreateList1) # 再度一覧化
                     print('{}\n|\t\t\t見つかったキャリアパッケージ一覧\t\t|\n{}\n{}'.format('-'*73, '-'*73 ,''.join('|-\t{}\n'.format(''.join(sorted(PackageNameList.split('\n'))[indx:indx + 1])) for indx in range(0, len(sorted(PackageNameList.split('\n'))), 1)))) # パッケージ名を一覧表示
                 try:
-                    with open('RestoreList.txt', 'w') as WRestore:
+                    os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                    
+                    with open('{}{}.rmcareerapp{}RestoreList.txt'.format(os.path.expanduser("~"), os.sep, os.sep), 'w', encoding='utf-8') as WRestore:
                         WRestore.write(PackageNameList)
                 except:
                     print('[ERROR] 復元リストの作成に失敗しましたこのままですと復元ができなくなります。')
@@ -386,10 +405,11 @@ def main():
             currentdir = os.getcwd()
             os.chdir(os.environ['HOME'])
             try:
-                ReadSettingMac = open('setting.conf', 'r').read() # 設定ファイルの読み込み
+                ReadSettingMac = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read() # 設定ファイルの読み込み
                 settingmac = ''
             except:
-                settingmac = open('setting.conf', 'w') # 設定ファイルがなかった場合
+                os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                settingmac = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'w', encoding='utf-8') # 設定ファイルがなかった場合
                 ReadSettingMac = ''
             if not ReadSettingMac == 'setting=1': # 設定ファイルに「setting=1」が書き込まれていなかった場合以下を実行する
                 if AutoInstaller(): # 自動インストール機能をオンにするかの確認
@@ -450,7 +470,8 @@ def main():
                     PackageNameList = '\n'.join(ReCreateList2) # 再度一覧化
                     print('{}\n|\t\t\t見つかったキャリアパッケージ一覧\t\t|\n{}\n{}'.format('-'*73, '-'*73 ,''.join('|-\t{}\n'.format(''.join(sorted(PackageNameList.split('\n'))[indx:indx + 1])) for indx in range(0, len(sorted(PackageNameList.split('\n'))), 1)))) # パッケージ名を一覧表示
                 try:
-                    with open('RestoreList.txt', 'w') as MRestore:
+                    os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                    with open('{}{}.rmcareerapp{}RestoreList.txt'.format(os.path.expanduser("~"), os.sep, os.sep), 'w', encoding='utf-8') as MRestore:
                         MRestore.write(PackageNameList)
                 except:
                     print('[ERROR] 復元リストの作成に失敗しましたこのままですと復元ができなくなります。')
@@ -487,10 +508,11 @@ def main():
         elif platform.system() == 'Linux':
             print('[INFO] オペレーションシステムが「Linux」でしたので処理を続行します.....')
             try:
-                ReadSettingLinux = open('setting.conf', 'r').read() # 設定ファイルの読み込み
+                ReadSettingLinux = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read() # 設定ファイルの読み込み
                 settingL = ''
             except:
-                settingL = open('setting.conf', 'w') # 設定ファイルがなかった場合
+                os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                settingL = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'w', encoding='utf-8') # 設定ファイルがなかった場合
                 ReadSettingLinux = ''
             if not ReadSettingLinux == 'setting=1': # 設定ファイルに「setting=1」が書き込まれていなかった場合以下を実行する
                 if AutoInstaller(): # 自動インストール機能をオンにするかの確認
@@ -550,7 +572,8 @@ def main():
                     PackageNameList = '\n'.join(ReCreateList3) # 再度一覧化
                     print('{}\n|\t\t\t見つかったキャリアパッケージ一覧\t\t|\n{}\n{}'.format('-'*73, '-'*73 ,''.join('|-\t{}\n'.format(''.join(sorted(PackageNameList.split('\n'))[indx:indx + 1])) for indx in range(0, len(sorted(PackageNameList.split('\n'))), 1)))) # パッケージ名を一覧表示
                 try:
-                    with open('RestoreList.txt', 'w') as LRestore:
+                    os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                    with open('{}{}.rmcareerapp{}RestoreList.txt'.format(os.path.expanduser("~"), os.sep, os.sep), 'w', encoding='utf-8') as LRestore:
                         LRestore.write(PackageNameList)
                 except:
                     print('[ERROR] 復元リストの作成に失敗しましたこのままですと復元ができなくなります。')
@@ -593,10 +616,11 @@ def main():
         if platform.system() == 'Windows':
             print('[INFO] オペレーションシステムが「Windows」でしたので処理を続行します.....')
             try:
-                ReadSetting = open('setting.conf', 'r').read() # 設定ファイルの読み込み
+                ReadSetting = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read() # 設定ファイルの読み込み
                 setting = ''
             except:
-                setting = open('setting.conf', 'w') # 設定ファイルがなかった場合
+                os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                setting = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'w') # 設定ファイルがなかった場合
                 ReadSetting = ''
             if not ReadSetting == 'setting=1': # 設定ファイルに「setting=1」が書き込まれていなかった場合以下を実行する
                 if AutoInstaller(): # 自動インストール機能をオンにするかの確認
@@ -631,7 +655,7 @@ def main():
                 ErrorDetect[0] = '1' # エラーだった場合は「１」とする
             if ErrorDetect[0] == '0':
                 try:
-                    RestoreTextFile = open('RestoreList.txt', 'r').read()
+                    RestoreTextFile = open('{}{}.rmcareerapp{}RestoreList.txt'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read()
                 except:
                     print('[ERROR] 復元用のファイルが読み込めませんでした。終了します。')
                     sys.exit(1)
@@ -692,10 +716,11 @@ def main():
             currentdir = os.getcwd()
             os.chdir(os.environ['HOME'])
             try:
-                ReadSettingMac = open('setting.conf', 'r').read() # 設定ファイルの読み込み
+                ReadSettingMac = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read() # 設定ファイルの読み込み
                 settingmac = ''
             except:
-                settingmac = open('setting.conf', 'w') # 設定ファイルがなかった場合
+                os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                settingmac = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'w') # 設定ファイルがなかった場合
                 ReadSettingMac = ''
             if not ReadSettingMac == 'setting=1': # 設定ファイルに「setting=1」が書き込まれていなかった場合以下を実行する
                 if AutoInstaller(): # 自動インストール機能をオンにするかの確認
@@ -731,7 +756,7 @@ def main():
                 ErrorDetect[0] = '1' # エラーだった場合は「１」とする
             if ErrorDetect[0] == '0':
                 try:
-                    RestoreTextFile = open('RestoreList.txt', 'r').read()
+                    RestoreTextFile = open('{}{}.rmcareerapp{}RestoreList.txt'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read()
                 except:
                     print('[ERROR] 復元用のファイルが読み込めませんでした。終了します。')
                     sys.exit(1)
@@ -790,10 +815,11 @@ def main():
         elif platform.system() == 'Linux':
             print('[INFO] オペレーションシステムが「Linux」でしたので処理を続行します.....')
             try:
-                ReadSettingLinux = open('setting.conf', 'r').read() # 設定ファイルの読み込み
+                ReadSettingLinux = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read() # 設定ファイルの読み込み
                 settingL = ''
             except:
-                settingL = open('setting.conf', 'w') # 設定ファイルがなかった場合
+                os.makedirs(os.path.join(os.path.expanduser("~"), '.rmcareerapp'), exist_ok=True)
+                settingL = open('{}{}.rmcareerapp{}setting.conf'.format(os.path.expanduser("~"), os.sep, os.sep), 'w') # 設定ファイルがなかった場合
                 ReadSettingLinux = ''
             if not ReadSettingLinux == 'setting=1': # 設定ファイルに「setting=1」が書き込まれていなかった場合以下を実行する
                 if AutoInstaller(): # 自動インストール機能をオンにするかの確認
@@ -828,7 +854,7 @@ def main():
                 ErrorDetect[0] = '1' # エラーだった場合は「１」とする
             if ErrorDetect[0] == '0':
                 try:
-                    RestoreTextFile = open('RestoreList.txt', 'r').read()
+                    RestoreTextFile = open('{}{}.rmcareerapp{}RestoreList.txt'.format(os.path.expanduser("~"), os.sep, os.sep), 'r').read()
                 except:
                     print('[ERROR] 復元用のファイルが読み込めませんでした。終了します。')
                     sys.exit(1)
