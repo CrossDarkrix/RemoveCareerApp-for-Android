@@ -13,7 +13,7 @@
 
 # 対応OS
 
-MacOSまたはLinux(対応Linux: Ubuntu, ArchLinux, RedHat, Fedora, VoidLinux)またはWindows。※依存関係は自動で解決されます。
+MacOSまたはLinux(対応Linux: Ubuntu及びDebian系Linux, ArchLinux, RedHat, Fedora, VoidLinux)またはWindows。※依存関係は自動で解決されます。
 
 ※Forkした人がAndroid端末を持っていないので基本的に動作未検証です。(プログラム自体の実行の確認だけはしました。)
 
@@ -63,7 +63,7 @@ MacやLinuxやWindowsでの例 :) `python3 RemoveCareerApp.py`
 
 以下コマンドを使用すればgitからcloneすることなく実行することも可能です
 
-例:) `python3 -c "import requests as r; exec(r.get('https://raw.githubusercontent.com/CrossDarkrix/remove-career-app/main/RemoveCareerApp.py').content)"`
+例:) `python3 -c "import requests as r; exec(r.get('https://raw.githubusercontent.com/CrossDarkrix/RemoveCareerApp-for-Android/main/RemoveCareerApp.py').content)"`
 
 # (重要) 今後について
 
