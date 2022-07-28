@@ -9,10 +9,10 @@ License: GPLv3-License
 Copyright (C) 2022 aoi_satou(竹林人間)
 """
 
-from PySide6.QtCore import (QAbstractItemModel, QCoreApplication, QModelIndex,QRect, Qt)
+from PySide6.QtCore import (QAbstractItemModel, QCoreApplication, QMetaObject, QModelIndex, QRect, QSize, Qt)
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QApplication, QCheckBox, QLabel, QLineEdit,QListView, QPlainTextEdit, QMenu,QPushButton, QStyledItemDelegate, QMainWindow)
-import io, urllib.request, os, platform, shutil, subprocess, sys, zipfile
+from PySide6.QtWidgets import (QApplication, QCheckBox, QLabel, QLineEdit,QListView, QPlainTextEdit, QMenu, QProgressBar, QPushButton, QStyledItemDelegate, QMainWindow)
+import io, urllib.request, math, os, platform, shutil, subprocess, sys, zipfile
 
 class ItemModel(QAbstractItemModel):
 	def __init__(self, parent=None):
@@ -91,20 +91,20 @@ class Ui_PyCareerAppRemover(QMainWindow):
 	def setupUi(self, PyCareerAppRemover):
 		if not PyCareerAppRemover.objectName():
 			PyCareerAppRemover.setObjectName("PyCareerAppRemover")
-		PyCareerAppRemover.resize(769, 777)
+		PyCareerAppRemover.resize(770, 780)
 		font = QFont()
 		self.ItemModel = ItemModel(self)
-		font.setFamilies([u"Meiryo"])
+		font.setFamilies(["Meiryo"])
 		font.setPointSize(15)
 		PyCareerAppRemover.setFont(font)
 		self.DeleteMode = QCheckBox(PyCareerAppRemover)
 		self.DeleteMode.setObjectName("DeleteMode")
-		self.DeleteMode.setGeometry(QRect(370, 420, 151, 61))
+		self.DeleteMode.setGeometry(QRect(380, 432, 151, 61))
 		self.DeleteMode.setIconSize(QSize(24, 24))
 		self.DeleteMode.setTristate(False)
 		self.RestoreMode = QCheckBox(PyCareerAppRemover)
 		self.RestoreMode.setObjectName("RestoreMode")
-		self.RestoreMode.setGeometry(QRect(370, 490, 151, 61))
+		self.RestoreMode.setGeometry(QRect(381, 493, 151, 61))
 		self.RestoreMode.setIconSize(QSize(24, 24))
 		self.RestoreMode.setTristate(False)
 		self.GetPackager = QPushButton(PyCareerAppRemover)
@@ -133,7 +133,7 @@ class Ui_PyCareerAppRemover(QMainWindow):
 		self.ListEdit.setClearButtonEnabled(True)
 		self.Debug_Log = QPlainTextEdit(PyCareerAppRemover)
 		self.Debug_Log.setObjectName("Debug_Log")
-		self.Debug_Log.setGeometry(QRect(10, 610, 751, 161))
+		self.Debug_Log.setGeometry(QRect(10, 610, 751, 121))
 		self.Debug_Log.setUndoRedoEnabled(False)
 		self.Debug_Log.setReadOnly(True)
 		self.InitSetting = QPushButton(PyCareerAppRemover)
@@ -141,8 +141,12 @@ class Ui_PyCareerAppRemover(QMainWindow):
 		self.InitSetting.setGeometry(QRect(600, 560, 161, 51))
 		self.InitSetting.pressed.connect(self.AutoDriverInstallation)
 		self.Logos = QLabel(PyCareerAppRemover)
+		LogoFont = QFont()
+		LogoFont.setFamilies(["Meiryo"])
+		LogoFont.setPointSize(14)
 		self.Logos.setObjectName("Logos")
 		self.Logos.setGeometry(QRect(30, 410, 321, 161))
+		self.Logos.setFont(LogoFont)
 		self.Logos.setTextFormat(Qt.PlainText)
 		self.Logos.setAlignment(Qt.AlignCenter)
 		self.ConsoleLabel = QLabel(PyCareerAppRemover)
@@ -151,7 +155,7 @@ class Ui_PyCareerAppRemover(QMainWindow):
 		self.ConsoleLabel.setAlignment(Qt.AlignCenter)
 		self.AllPackageRemove = QPushButton(PyCareerAppRemover)
 		self.AllPackageRemove.setObjectName("AllPackageRemove")
-		self.AllPackageRemove.setGeometry(QRect(540, 440, 211, 51))
+		self.AllPackageRemove.setGeometry(QRect(540, 460, 211, 51))
 		self.AllPackageRemove.pressed.connect(self.RestoreOrRemoving)
 		self.InputLabel = QLabel(PyCareerAppRemover)
 		self.InputLabel.setObjectName("InputLabel")
@@ -162,6 +166,21 @@ class Ui_PyCareerAppRemover(QMainWindow):
 		self.InstallText.setGeometry(QRect(330, 570, 271, 31))
 		self.InstallText.setTextFormat(Qt.PlainText)
 		self.InstallText.setAlignment(Qt.AlignCenter)
+		self.WorkprogressBar = QProgressBar(PyCareerAppRemover)
+		self.WorkprogressBar.setObjectName("WorkprogressBar")
+		self.WorkprogressBar.setGeometry(QRect(10, 740, 611, 23))
+		self.WorkprogressBar.setValue(0)
+		self.WorkprogressBar.setAlignment(Qt.AlignCenter)
+		self.WorkprogressBar.setOrientation(Qt.Horizontal)
+		self.ProgressNum = QLabel(PyCareerAppRemover)
+		self.ProgressNum.setObjectName("ProgressNum")
+		self.ProgressNum.setGeometry(QRect(624, 743, 78, 21))
+		self.ProgressNum.setAlignment(Qt.AlignCenter)
+		self.ProgressPercent = QLabel(PyCareerAppRemover)
+		self.ProgressPercent.setObjectName("ProgressPercent")
+		self.ProgressPercent.setGeometry(QRect(705, 742, 55, 21))
+		self.ProgressPercent.setAlignment(Qt.AlignCenter)
+
 		self.retranslateUi(PyCareerAppRemover)
 		self.setModeSelector()
 		QMetaObject.connectSlotsByName(PyCareerAppRemover)
@@ -206,9 +225,10 @@ class Ui_PyCareerAppRemover(QMainWindow):
 		self.Debug_Log.appendPlainText(AppendText)
 
 	def is_Linux(self):
+		self.print('[INFO] オペレーションシステムのタイプを判別しています。しばらくお待ちください........')
 		OSType = ['0']
 		OSDetectCommandList = ['apt --version', 'pacman --version', 'yum --version', 'dnf --version', 'xbps-install --version']
-		for DetectCMD in OSDetectCommandList:
+		for ProgNum, DetectCMD in enumerate(OSDetectCommandList):
 			try:
 				subprocess.check_call(DetectCMD, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # Silent Check
 				if DetectCMD == 'apt --version':
@@ -231,59 +251,103 @@ class Ui_PyCareerAppRemover(QMainWindow):
 					break
 			except:
 				pass
+			try:
+				ProgPercent = math.floor(ProgNum / len(OSDetectCommandList) * 100)
+			except:
+				ProgPercent = 0
+			self.WorkprogressBar.setValue(ProgPercent)
+			if not ProgPercent == 100:
+				self.ProgressNum.setText('{} / {}'.format(ProgNum, len(OSDetectCommandList)))
+				self.ProgressPercent.setText('{}%'.format(ProgPercent))
+			else:
+				self.ProgressNum.setText('{} / {}'.format(ProgNum, len(OSDetectCommandList)))
+				self.ProgressPercent.setText('{}%'.format(ProgPercent))
+				self.print('[INFO] オペレーションシステムのタイプが判別し終わりました')
+		self.WorkprogressBar.setValue(0)
+		self.WorkprogressBar.maximum(0)
 		if OSType[0] == 'Ubuntu':
 			try:
 				subprocess.check_call('sudo apt update', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				subprocess.check_call('sudo apt install adb fastboot -y', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				self.print('[INFO] adbのインストールに成功しました')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(100)
 			except:
 				self.print('[ERROR] adbのインストールに失敗しました。本アプリをrootで実行していますか？')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(0)
 		elif OSType[0] == 'Arch':
 			try:
 				subprocess.check_call('sudo pacman -Sy --noconfirm android-tools', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				self.print('[INFO] adbのインストールに成功しました')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(100)
 			except:
 				self.print('[ERROR] adbのインストールに失敗しました。本アプリをrootで実行していますか？')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(0)
 		elif OSType[0] == 'RedHat':
 			try:
 				subprocess.check_call('sudo yum makecache', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				subprocess.check_call('sudo yum -y install android-tools', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				self.print('[INFO] adbのインストールに成功しました')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(100)
 			except:
 				self.print('[ERROR] adbのインストールに失敗しました。本アプリをrootで実行していますか？')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(0)
 		elif OSType[0] == 'Fedora':
 			try:
 				subprocess.check_call('sudo dnf makecache', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				subprocess.check_call('sudo dnf -y install android-tools', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				self.print('[INFO] adbのインストールに成功しました')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(100)
 			except:
 				self.print('[ERROR] adbのインストールに失敗しました。本アプリをrootで実行していますか？')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(0)
 		elif OSType[0] == 'VoidLinux':
 			try:
 				subprocess.check_call('sudo xbps-install -Su android-tools', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				self.print('[INFO] adbのインストールに成功しました')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(100)
 			except:
 				self.print('[ERROR] adbのインストールに失敗しました。本アプリをrootで実行していますか？')
+				self.WorkprogressBar.setMaximum(100)
+				self.WorkprogressBar.setValue(0)
 		elif OSType[0] == 'None':
 			self.print('[ERROR] 未対応のOSです。')
+			self.WorkprogressBar.setMaximum(100)
+			self.WorkprogressBar.setValue(0)
+		self.WorkprogressBar.setValue(0)
 
 	def is_Mac(self):
+		self.print('[INFO] Mac用のadbをダウンロードします。しばらくお待ちください......')
+		self.WorkprogressBar.setMaximum(0)
 		plat_toolsZip = urllib.request.urlopen('https://dl.google.com/android/repository/platform-tools_r33.0.1-darwin.zip').read()
 		self.print('[INFO] 「Platform Tools」をダウンロードしました。')
 		with zipfile.ZipFile(io.BytesIO(plat_toolsZip)) as plat_zip:
 			plat_zip.extractall(path='{}/Applications/'.format(os.path.expanduser("~")))
+		self.WorkprogressBar.setMaximum(100)
+		self.WorkprogressBar.setValue(10)
 		try:
 			subprocess.check_call('export PATH="$PATH:{}/Applications/platform-tools"'.format(os.path.expanduser("~")), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		except:
 			pass
+		self.WorkprogressBar.setValue(20)
 		try:
 			rZshrc = open('{}/.zshrc'.format(os.path.expanduser("~")), 'r').read()
 		except:
 			rZshrc = ''
+		self.WorkprogressBar.setValue(30)
 		try:
 			rBashrc = open('{}/.bashrc'.format(os.path.expanduser("~")), 'r').read()
 		except:
 			rBashrc = ''
+		self.WorkprogressBar.setValue(40)
 		if not rZshrc == '':
 			with open('{}{}.zshrc'.format(os.path.expanduser("~"), os.sep), 'a') as wZshrc:
 				wZshrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.path.expanduser("~"))))
@@ -292,6 +356,7 @@ class Ui_PyCareerAppRemover(QMainWindow):
 			with open('{}{}.zshrc'.format(os.path.expanduser("~"), os.sep), 'w') as wZshrc:
 				wZshrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.path.expanduser("~"))))
 			self.print('[INFO] ZShの環境変数にplatform-toolsを追加しました。')
+		self.WorkprogressBar.setValue(50)
 		if not rBashrc == '':
 			with open('{}{}.bashrc'.format(os.path.expanduser("~"), os.sep), 'a') as wBashrc:
 				wBashrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.path.expanduser("~"))))
@@ -300,28 +365,55 @@ class Ui_PyCareerAppRemover(QMainWindow):
 			with open('{}{}.bashrc'.format(os.path.expanduser("~"), os.sep), 'w') as wBashrc:
 				wBashrc.write('export PATH="{}:{}"'.format(os.environ['PATH'], '{}/Applications/platform-tools'.format(os.path.expanduser("~"))))
 			self.print('[INFO] Bashの環境変数にplatform-toolsを追加しました。')
+		self.WorkprogressBar.setValue(60)
+		self.WorkprogressBar.setMaximum(0)
 		try:
 			subprocess.check_call('source {}{}.zshrc'.format(os.path.expanduser("~"), os.sep), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			self.print('[INFO] 環境変数を即座に反映させました。')
 		except:
 			self.print('[ERROR] エラー。環境変数をシステムに反映できませんでした。')
 			pass
+		self.WorkprogressBar.setMaximum(100)
+		self.WorkprogressBar.setValue(100)
+		self.WorkprogressBar.setValue(0)
 
 	def is_Windows(self):
 		self.print('[INFO] 本機能はまだ試験段階の機能であることを留意してください')
+		self.print('[INFO] Windows用のadbをダウンロードします。しばらくお待ちください..........')
+		self.WorkprogressBar.setMaximum(0)
 		DriverZip = urllib.request.urlopen('https://dl-ssl.google.com/android/repository/latest_usb_driver_windows.zip').read()
 		self.print('[INFO] 「Android USB Driver」をダウンロードしました。')
+		self.WorkprogressBar.setMaximum(100)
+		self.WorkprogressBar.setValue(100)
+		self.WorkprogressBar.setValue(0)
+		self.WorkprogressBar.setMaximum(0)
 		PlatToolZip = urllib.request.urlopen('https://dl.google.com/android/repository/platform-tools-latest-windows.zip').read()
 		self.print('[INFO] 「Platform Tools」をダウンロードしました。')
+		self.WorkprogressBar.setMaximum(100)
+		self.WorkprogressBar.setValue(100)
+		self.WorkprogressBar.setValue(0)
+		self.WorkprogressBar.setMaximum(0)
 		TMPDIR = os.path.join(os.path.expanduser("~"), '.rmcareerap', 'tmpdir')
 		os.makedirs('{}'.format(TMPDIR), exist_ok=True)
+		self.WorkprogressBar.setMaximum(100)
+		self.WorkprogressBar.setValue(100)
 		self.print('[INFO] 「{}」を作成しました'.format(TMPDIR))
+		self.WorkprogressBar.setValue(0)
+		self.WorkprogressBar.setMaximum(0)
 		with zipfile.ZipFile(io.BytesIO(DriverZip)) as D_zip:
 			D_zip.extractall(path=TMPDIR)
+		self.WorkprogressBar.setMaximum(100)
+		self.WorkprogressBar.setValue(100)
 		self.print('[INFO] 「{}{}usb_driver」にドライバーファイルを解凍しました。'.format(TMPDIR, os.sep))
+		self.WorkprogressBar.setValue(0)
+		self.WorkprogressBar.setMaximum(0)
 		with zipfile.ZipFile(io.BytesIO(PlatToolZip)) as Plat_zip:
 			Plat_zip.extractall(path=TMPDIR)
+		self.WorkprogressBar.setMaximum(100)
 		self.print('[INFO] 「{}{}platform-tools」にadb類を解凍しました。'.format(TMPDIR, os.sep))
+		self.WorkprogressBar.setValue(100)
+		self.WorkprogressBar.setValue(0)
+		self.WorkprogressBar.setMaximum(0)
 		try:
 			if not os.path.splitdrive(os.environ['windir'])[0] == '':
 				WorkDrive = os.path.splitdrive(os.environ['windir'])[0] + os.sep
@@ -340,6 +432,7 @@ class Ui_PyCareerAppRemover(QMainWindow):
 			self.print('[INFO] 「{}」を環境変数に追加しました。'.format(os.path.join(WorkDrive, 'platform-tools')))
 		except:
 			self.print('[ERROR] 「{}」を環境変数に追加できませんでした。手動で環境変数に追加する必要があります'.format(os.path.join(WorkDrive, 'platform-tools')))
+		self.WorkprogressBar.setMaximum(100)
 		currentdir = os.getcwd()
 		os.chdir('{}{}usb_driver'.format(TMPDIR, os.sep))
 		DriverFilePath = '{}{}'.format(os.getcwd(), os.sep)
@@ -353,11 +446,26 @@ class Ui_PyCareerAppRemover(QMainWindow):
 				self.print('[INFO] 次のコマンドを実行中.....: {}'.format(infInstallcmd))
 				subprocess.check_call(infInstallcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				self.print('[INFO] ドライバーのインストールに成功しました。')
+				self.ProgressPercent.setText('{}%'.format('100'))
+				self.WorkprogressBar.setValue(100)
 				break
 			except:
 				self.print('[ERROR] ドライバーのインストールに失敗しました。別のコマンドで再試行します。')
 				if IndexNum+1 == len(DriverInstallCommandList):
 					self.print('[ERROR] ドライバーのインストールに失敗しました。全ての手順で失敗したため、手動でドライバーをインストールする必要があります。ドライバーの場所: {}'.format(DriverFilePath))
+					self.WorkprogressBar.setValue(0)
+			try:
+				ProgPercent = math.floor(IndexNum / len(DriverInstallCommandList) * 100)
+			except:
+					ProgPercent = 0
+			self.WorkprogressBar.setValue(ProgPercent)
+			if not ProgPercent == 100:
+				self.ProgressNum.setText('{} / {}'.format(IndexNum, len(DriverInstallCommandList)))
+				self.ProgressPercent.setText('{}%'.format(ProgPercent))
+			else:
+				self.ProgressNum.setText('{} / {}'.format(IndexNum, len(DriverInstallCommandList)))
+				self.ProgressPercent.setText('{}%'.format(ProgPercent))
+		self.WorkprogressBar.setValue(0)
 
 	def CareerAppList(self, PackList):
 		RemovePackList = []
@@ -423,7 +531,8 @@ class Ui_PyCareerAppRemover(QMainWindow):
 			self.print('[ERROR] モードを選択してパッケージ一覧を取得してから押してください')
 		if self.DeleteMode.checkState() == Qt.Checked:
 			self.print('[INFO] 削除を実行します')
-			for Pack in [self.ItemModel.data(self.ItemModel.index(row, 1)) for row in range(self.ItemModel.rowCount())]:
+			DeletingList = [self.ItemModel.data(self.ItemModel.index(row, 1)) for row in range(self.ItemModel.rowCount())]
+			for IndexNum, Pack in enumerate(DeletingList):
 				try:
 					self.print('[INFO] 試行中: {}'.format('adb shell pm uninstall --user 0 {}'.format(Pack)))
 					subprocess.check_call('adb shell pm uninstall --user 0 {}'.format(Pack), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -438,20 +547,43 @@ class Ui_PyCareerAppRemover(QMainWindow):
 						self.print('[INFO] 削除に成功しました')
 					except:
 						self.print('[ERROR] エラーが発生しました')
+				try:
+					ProgPrecent = math.floor(IndexNum / len(DeletingList) * 100)
+				except:
+					ProgPrecent = 0
+				self.WorkprogressBar.setValue(ProgPrecent)
+				if not ProgPrecent == 100:
+					self.ProgressNum.setText('{} / {}'.format(IndexNum, len(DeletingList)))
+					self.ProgressPercent.setText('{}%'.format(ProgPrecent))
+				else:
+					self.ProgressNum.setText('{} / {}'.format(IndexNum, len(DeletingList)))
+					self.ProgressPercent.setText('{}%'.format(ProgPrecent))
 		if self.RestoreMode.checkState() == Qt.Checked:
-			for rpack in [self.ItemModel.data(self.ItemModel.index(row, 1)) for row in range(self.ItemModel.rowCount())]:
+			RestoringList = [self.ItemModel.data(self.ItemModel.index(row, 1)) for row in range(self.ItemModel.rowCount())]
+			for IndexNum, rPack in enumerate(RestoringList):
 				try:
 					self.print('[INFO] 試行中: {}'.format('adb shell cmd package install-existing {}'.format(rpack)))
-					subprocess.check_call('adb shell cmd package install-existing {}'.format(rpack), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					subprocess.check_call('adb shell cmd package install-existing {}'.format(rPack), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 					self.print('[INFO] 復元に成功しました')
 				except:
 					self.print('[ERROR] エラーが発生しましたが、もう一つのコマンドで試してみます')
 					try:
-						self.print('[INFO] 試行中: {}'.format('adb shell pm enable --user 0 {}'.format(rpack)))
-						subprocess.check_call('adb shell pm enable --user 0 {}'.format(rpack), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+						self.print('[INFO] 試行中: {}'.format('adb shell pm enable --user 0 {}'.format(rPack)))
+						subprocess.check_call('adb shell pm enable --user 0 {}'.format(rPack), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 						self.print('[INFO] 復元に成功しました')
 					except:
 						self.print('[ERROR] エラーが発生しました')
+				try:
+					ProgPrecent = math.floor(IndexNum / len(RestoringList) * 100)
+				except:
+					ProgPrecent = 0
+				self.WorkprogressBar.setValue(ProgPrecent)
+				if not ProgPrecent == 100:
+					self.ProgressNum.setText('{} / {}'.format(IndexNum, len(RestoringList)))
+					self.ProgressPercent.setText('{}%'.format(ProgPrecent))
+				else:
+					self.ProgressNum.setText('{} / {}'.format(IndexNum, len(RestoringList)))
+					self.ProgressPercent.setText('{}%'.format(ProgPrecent))
 
 	def retranslateUi(self, PyCareerAppRemover):
 		PyCareerAppRemover.setWindowTitle(QCoreApplication.translate("PyCareerAppRemover", u"pyCareerAppRemover", None))
@@ -469,6 +601,8 @@ class Ui_PyCareerAppRemover(QMainWindow):
 			)
 		self.InputLabel.setText(QCoreApplication.translate("PyCareerAppRemover", "追加するパッケージ名:", None))
 		self.InstallText.setText(QCoreApplication.translate("PyCareerAppRemover", "ツールとドライバの自動インストール:", None))
+		self.ProgressNum.setText(QCoreApplication.translate("PyCareerAppRemover", "0 / 0", None))
+		self.ProgressPercent.setText(QCoreApplication.translate("PyCareerAppRemover", "[0%]", None))
 
 def main():
 	app = QApplication(sys.argv)
