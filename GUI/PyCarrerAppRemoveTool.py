@@ -609,9 +609,9 @@ def main():
 	main_window = QMainWindow()
 	ui_window = Ui_PyCareerAppRemover()
 	ui_window.setupUi(main_window)
+	main_window.setFixedSize(main_window.size())
 	main_window.show()
 	sys.exit(app.exec())
 
 if __name__ == '__main__':
 	main()
-
